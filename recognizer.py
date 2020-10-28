@@ -1,10 +1,3 @@
-import argparse
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--game-over', action='store_true', dest='game_over')
-parser.add_argument('--file', dest='file', required=True)
-args = parser.parse_args()
-
 from skimage.measure import label, regionprops
 from skimage.transform import resize
 import numpy as np
@@ -57,6 +50,12 @@ def is_game_over(field, threshold=lambda x: 0.75):
     
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--game-over', action='store_true', dest='game_over')
+    parser.add_argument('--file', dest='file', required=True)
+    args = parser.parse_args()
+
     filename = args.file
     if args.game_over:
         screen = plt.imread(filename)
