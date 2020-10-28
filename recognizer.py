@@ -1,4 +1,5 @@
 from skimage.measure import label, regionprops
+from skimage.morphology import binary_erosion
 from skimage.transform import resize
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,16 +19,27 @@ def binarize(screen, threshold):
     return binarized
 
 
-def find_field(screen, threshold=lambda x: 0.95, find_field=field_by_size):
+def crop_field(screen, bbox, threshold=lambda x: 0.99):
+    b = binarize(screen, threshold=threshold)
+    if np.sum(b == 0) // np.sum(b == 1) > 2:
+        screen = 1 - screen
+    return screen[bbox[0]:bbox[1], bbox[2]:bbox[3]]
+
+
+def find_field(screen, threshold=lambda x: 0.99, find_field_method=field_by_size):
     # Fixing fields that are black on background
     b = binarize(screen, threshold=threshold)
     if (np.sum(b == 0) // np.sum(b == 1) > 2):
         screen = 1 - screen
     
     b = binarize(screen, threshold=threshold)
-    field_bbox = find_field(b)
-    field = screen[field_bbox[0]:field_bbox[2], field_bbox[1]:field_bbox[3]]
-    return field
+    field_bbox = find_field_method(b)
+    bin_field = np.logical_not(b[field_bbox[0]:field_bbox[2], field_bbox[1]:field_bbox[3]]).astype(int)
+    tmp = binary_erosion(np.copy(bin_field))
+    tmp = binary_erosion(tmp)
+    tmp = binary_erosion(tmp).astype(int)
+    y, x = np.where(tmp.astype(int) == 1)
+    return field_bbox[0] + min(y) - 5, field_bbox[0] + max(y) + 5, field_bbox[1] + min(x) - 5, field_bbox[1] + max(x) + 5
 
 def vertical_lines(image):
     lines = np.sum(image.sum(axis=0) / image.shape[0] == 1)
